@@ -16,25 +16,37 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    // Set persistence to LOCAL
-    setPersistence(auth, browserLocalPersistence)
-      .then(() => {
+    let unsubscribe;
+
+    async function initializeAuth() {
+      try {
+        // Set persistence to LOCAL
+        await setPersistence(auth, browserLocalPersistence);
         console.log('Auth persistence set to LOCAL');
-      })
-      .catch((error) => {
-        console.error('Error setting persistence:', error);
-      });
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('Auth state changed:', user ? `User logged in: ${user.email}` : 'No user');
-      setCurrentUser(user);
-      setLoading(false);
-    });
+        // Listen for auth state changes
+        unsubscribe = onAuthStateChanged(auth, (user) => {
+          console.log('Auth state changed:', user ? `User logged in: ${user.email}` : 'No user');
+          setCurrentUser(user);
+          if (!initialized) setInitialized(true);
+          setLoading(false);
+        });
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        setLoading(false);
+        setInitialized(true);
+      }
+    }
 
-    return unsubscribe;
-  }, []);
+    initializeAuth();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [initialized]);
 
   const signOut = async () => {
     try {

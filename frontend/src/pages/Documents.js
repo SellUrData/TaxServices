@@ -130,12 +130,17 @@ const Documents = () => {
       
       // Upload file to Firebase Storage
       console.log('Starting upload...');
-      const snapshot = await uploadBytes(storageRef, selectedFile, metadata);
-      console.log('Upload completed');
+      try {
+        const snapshot = await uploadBytes(storageRef, selectedFile, metadata);
+        console.log('Upload completed:', snapshot);
+      } catch (uploadError) {
+        console.error('Upload error details:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
       
       // Get the download URL
       console.log('Getting download URL...');
-      const downloadURL = await getDownloadURL(snapshot.ref);
+      const downloadURL = await getDownloadURL(storageRef);
       console.log('Got download URL:', downloadURL);
 
       // Save document metadata to Firestore

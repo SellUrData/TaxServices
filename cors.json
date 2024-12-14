@@ -1,6 +1,12 @@
 [
   {
-    "origin": ["http://localhost:3000", "http://localhost:3001"],
+    "origin": [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "https://smythe-tax-services.vercel.app",
+      "https://smythe-tax-services-1pbaxix9s-jaylendcamp-gmailcoms-projects.vercel.app",
+      "https://*.vercel.app"
+    ],
     "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
     "responseHeader": [
       "Content-Type",

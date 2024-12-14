@@ -8,6 +8,7 @@ import os
 from dotenv import load_dotenv
 from firebase_admin import credentials
 import firebase_admin
+from .config import FIREBASE_CONFIG
 
 # Load environment variables
 load_dotenv()
@@ -36,9 +37,11 @@ def create_app():
     
     # Initialize Firebase Admin SDK if not already initialized
     if not firebase_admin._apps:
-        cred_path = os.path.join(os.path.dirname(__file__), '..', 'taxservices-72ea6-firebase-adminsdk-sakqk-ab79108bb5.json')
-        cred = credentials.Certificate(cred_path)
-        firebase_admin.initialize_app(cred)
+        if FIREBASE_CONFIG:
+            cred = credentials.Certificate(FIREBASE_CONFIG)
+            firebase_admin.initialize_app(cred)
+        else:
+            print("Warning: Firebase configuration not found. Some features may not work.")
     
     # Configure CORS
     app.config['CORS_HEADERS'] = 'Content-Type'
