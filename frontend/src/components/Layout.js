@@ -24,6 +24,7 @@ import {
   Person as PersonIcon,
   Receipt as ReceiptIcon,
   People as PeopleIcon,
+  Business as BusinessIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -86,6 +87,11 @@ const Layout = ({ children }) => {
   // Add Employees menu item for admin and CEO
   if (userRole === 'admin' || userRole === 'ceo') {
     menuItems.push({ text: 'Employees', icon: <PeopleIcon />, path: '/employees' });
+  }
+
+  // Add Clients menu item for employees, admin and CEO
+  if (userRole === 'employee' || userRole === 'admin' || userRole === 'ceo') {
+    menuItems.push({ text: 'Clients', icon: <BusinessIcon />, path: '/clients' });
   }
 
   menuItems.push({ text: 'Profile', icon: <PersonIcon />, path: '/profile' });

@@ -8,7 +8,9 @@ import {
   Grid,
   Link,
   Alert,
-  MenuItem
+  MenuItem,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -19,6 +21,7 @@ const roles = ['employee', 'admin', 'ceo'];
 
 const Register = () => {
   const navigate = useNavigate();
+  const [userType, setUserType] = useState('client'); // 'client' or 'employee'
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -29,6 +32,12 @@ const Register = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleUserTypeChange = (event, newType) => {
+    if (newType !== null) {
+      setUserType(newType);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,19 +63,31 @@ const Register = () => {
         formData.password
       );
 
-      // Check if this is the first user (make them CEO)
-      const employeesRef = doc(db, 'employees', userCredential.user.uid);
-      const employeeDoc = await getDoc(employeesRef);
+      if (userType === 'client') {
+        // Store client data in users collection
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          email: formData.email,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          role: 'client',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      } else {
+        // Check if this is the first employee (make them CEO)
+        const employeesRef = doc(db, 'employees', userCredential.user.uid);
+        const employeeDoc = await getDoc(employeesRef);
 
-      // Store employee data in Firestore
-      await setDoc(employeesRef, {
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        role: employeeDoc.exists() ? formData.role : 'ceo', // First user becomes CEO
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
+        // Store employee data in employees collection
+        await setDoc(employeesRef, {
+          email: formData.email,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          role: employeeDoc.exists() ? formData.role : 'ceo', // First employee becomes CEO
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
 
       navigate('/dashboard');
     } catch (error) {
@@ -105,8 +126,19 @@ const Register = () => {
     <Container component="main" maxWidth="xs">
       <Paper elevation={3} sx={{ p: 4, mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Typography component="h1" variant="h5" gutterBottom>
-          Register New Employee
+          Create Account
         </Typography>
+
+        <ToggleButtonGroup
+          color="primary"
+          value={userType}
+          exclusive
+          onChange={handleUserTypeChange}
+          sx={{ mb: 3 }}
+        >
+          <ToggleButton value="client">Client</ToggleButton>
+          <ToggleButton value="employee">Employee</ToggleButton>
+        </ToggleButtonGroup>
         
         {error && (
           <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
@@ -174,24 +206,26 @@ const Register = () => {
                 disabled={loading}
               />
             </Grid>
-            <Grid item xs={12}>
-              <TextField
-                select
-                required
-                fullWidth
-                label="Role"
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                disabled={loading}
-              >
-                {roles.map((role) => (
-                  <MenuItem key={role} value={role}>
-                    {role.charAt(0).toUpperCase() + role.slice(1)}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
+            {userType === 'employee' && (
+              <Grid item xs={12}>
+                <TextField
+                  select
+                  required
+                  fullWidth
+                  label="Role"
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  disabled={loading}
+                >
+                  {roles.map((role) => (
+                    <MenuItem key={role} value={role}>
+                      {role.charAt(0).toUpperCase() + role.slice(1)}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            )}
             <Grid item xs={12}>
               <Button
                 type="submit"

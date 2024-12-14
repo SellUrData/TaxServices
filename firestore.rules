@@ -8,42 +8,57 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/employees/$(request.auth.uid)).data.role in ['admin', 'ceo'];
+      return get(/databases/$(database)/documents/employees/$(request.auth.uid)).data.role == 'admin';
     }
     
     function isCEO() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/employees/$(request.auth.uid)).data.role == 'ceo';
+      return get(/databases/$(database)/documents/employees/$(request.auth.uid)).data.role == 'ceo';
+    }
+    
+    function isEmployee() {
+      return get(/databases/$(database)/documents/employees/$(request.auth.uid)).data.role == 'employee';
     }
 
-    // Allow anyone to read their own employee document
-    match /employees/{userId} {
+    function isClient() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'client';
+    }
+
+    // Employee collection rules
+    match /employees/{employeeId} {
+      allow read: if isAuthenticated() && (request.auth.uid == employeeId || isAdmin() || isCEO());
+      allow write: if isAuthenticated() && (isAdmin() || isCEO());
+    }
+
+    // Users (clients) collection rules
+    match /users/{userId} {
       allow read: if isAuthenticated() && (
-        request.auth.uid == userId || isAdmin()
+        request.auth.uid == userId || 
+        isEmployee() || 
+        isAdmin() || 
+        isCEO()
       );
-      // Only CEO can create/update/delete employee documents
-      allow write: if isCEO();
-      // Allow initial creation of employee document
-      allow create: if request.auth.uid == userId;
+      allow create: if true; // Allow anyone to register as a client
+      allow update, delete: if isAuthenticated() && (
+        request.auth.uid == userId || 
+        isAdmin() || 
+        isCEO()
+      );
     }
 
-    // Clients collection
-    match /clients/{clientId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-
-    // Documents collection
+    // Documents collection rules
     match /documents/{documentId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
-    }
-
-    // Tax returns collection
-    match /taxReturns/{returnId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || // Client can read their own documents
+        isEmployee() || // Employees can read all client documents
+        isAdmin() || 
+        isCEO()
+      );
+      allow write: if isAuthenticated() && (
+        (resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid) || // Clients can only write their own documents
+        isEmployee() || // Employees can write documents for clients
+        isAdmin() || 
+        isCEO()
+      );
     }
   }
 }

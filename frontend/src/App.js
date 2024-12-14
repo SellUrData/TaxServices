@@ -6,6 +6,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 // Components
 import Layout from './components/Layout';
 import PrivateRoute from './components/PrivateRoute';
+import RequireRole from './components/RequireRole';
 import { AuthProvider } from './contexts/AuthContext';
 
 // Pages
@@ -17,6 +18,8 @@ import Documents from './pages/Documents';
 import TaxReturns from './pages/TaxReturns';
 import Profile from './pages/Profile';
 import EmployeeManagement from './pages/EmployeeManagement';
+import ClientManagement from './pages/ClientManagement';
+import ForgotPassword from './pages/ForgotPassword';
 
 const theme = createTheme({
   palette: {
@@ -50,59 +53,30 @@ function App() {
         <CssBaseline />
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route
-              path="/dashboard"
-              element={
-                <PrivateRoute>
-                  <Layout>
-                    <Dashboard />
-                  </Layout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/documents"
-              element={
-                <PrivateRoute>
-                  <Layout>
-                    <Documents />
-                  </Layout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/tax-returns"
-              element={
-                <PrivateRoute>
-                  <Layout>
-                    <TaxReturns />
-                  </Layout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <PrivateRoute>
-                  <Layout>
-                    <Profile />
-                  </Layout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/employees"
-              element={
-                <PrivateRoute>
-                  <Layout>
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route element={<PrivateRoute />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route 
+                path="/employees" 
+                element={
+                  <RequireRole roles={['admin', 'ceo']}>
                     <EmployeeManagement />
-                  </Layout>
-                </PrivateRoute>
-              }
-            />
+                  </RequireRole>
+                } 
+              />
+              <Route 
+                path="/clients" 
+                element={
+                  <RequireRole roles={['employee', 'admin', 'ceo']}>
+                    <ClientManagement />
+                  </RequireRole>
+                } 
+              />
+            </Route>
           </Routes>
         </AuthProvider>
       </ThemeProvider>
