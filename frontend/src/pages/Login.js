@@ -9,13 +9,14 @@ import {
   Link,
   Alert
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
@@ -26,9 +27,10 @@ const Login = () => {
 
   useEffect(() => {
     if (currentUser) {
-      navigate('/dashboard');
+      const from = location.state?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, location]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,7 +39,7 @@ const Login = () => {
 
     try {
       await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      // Navigation will be handled by the useEffect hook
+      // Navigation will be handled by useEffect
     } catch (error) {
       console.error('Login error:', error);
       setError(
@@ -45,7 +47,6 @@ const Login = () => {
           ? 'Invalid email or password'
           : 'An error occurred during login'
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -71,7 +72,7 @@ const Login = () => {
         }}
       >
         <Typography component="h1" variant="h5">
-          Sign in
+          Sign in to Smythe Tax Services
         </Typography>
         {error && (
           <Alert severity="error" sx={{ width: '100%', mt: 2 }}>
@@ -91,6 +92,7 @@ const Login = () => {
             autoFocus
             value={formData.email}
             onChange={handleChange}
+            disabled={loading}
           />
           <TextField
             variant="outlined"
@@ -104,6 +106,7 @@ const Login = () => {
             autoComplete="current-password"
             value={formData.password}
             onChange={handleChange}
+            disabled={loading}
           />
           <Button
             type="submit"

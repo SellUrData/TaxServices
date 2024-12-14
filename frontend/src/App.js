@@ -16,6 +16,7 @@ import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
 import TaxReturns from './pages/TaxReturns';
 import Profile from './pages/Profile';
+import EmployeeManagement from './pages/EmployeeManagement';
 
 const theme = createTheme({
   palette: {
@@ -88,6 +89,16 @@ function App() {
                 <PrivateRoute>
                   <Layout>
                     <Profile />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/employees"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <EmployeeManagement />
                   </Layout>
                 </PrivateRoute>
               }

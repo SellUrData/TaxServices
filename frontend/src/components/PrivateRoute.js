@@ -1,26 +1,12 @@
-import React, { useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { CircularProgress, Box } from '@mui/material';
 
 const PrivateRoute = ({ children }) => {
   const { currentUser, loading } = useAuth();
-  const navigate = useNavigate();
+  const location = useLocation();
   
-  useEffect(() => {
-    let timeoutId;
-    
-    if (!loading && !currentUser) {
-      timeoutId = setTimeout(() => {
-        navigate('/login', { replace: true });
-      }, 100);
-    }
-    
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [currentUser, loading, navigate]);
-
   if (loading) {
     return (
       <Box
@@ -35,7 +21,8 @@ const PrivateRoute = ({ children }) => {
   }
 
   if (!currentUser) {
-    return null; // Let the useEffect handle the navigation
+    // Redirect to login while preserving the attempted URL
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return children;

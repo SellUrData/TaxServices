@@ -7,12 +7,15 @@ import {
   Button,
   Grid,
   Link,
-  Alert
+  Alert,
+  MenuItem
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+
+const roles = ['employee', 'admin', 'ceo'];
 
 const Register = () => {
   const navigate = useNavigate();
@@ -20,15 +23,15 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    first_name: '',
-    last_name: ''
+    firstName: '',
+    lastName: '',
+    role: 'employee'
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Starting registration process...'); // Debug log
     
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -44,7 +47,6 @@ const Register = () => {
     setLoading(true);
 
     try {
-      console.log('Creating user with Firebase Auth...'); // Debug log
       // Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -52,26 +54,24 @@ const Register = () => {
         formData.password
       );
 
-      console.log('User created successfully:', userCredential.user.uid); // Debug log
+      // Check if this is the first user (make them CEO)
+      const employeesRef = doc(db, 'employees', userCredential.user.uid);
+      const employeeDoc = await getDoc(employeesRef);
 
-      console.log('Storing user data in Firestore...'); // Debug log
-      // Store additional user data in Firestore
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
+      // Store employee data in Firestore
+      await setDoc(employeesRef, {
         email: formData.email,
-        firstName: formData.first_name,
-        lastName: formData.last_name,
-        role: 'client',
-        createdAt: new Date().toISOString()
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        role: employeeDoc.exists() ? formData.role : 'ceo', // First user becomes CEO
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       });
 
-      console.log('User data stored successfully'); // Debug log
       navigate('/dashboard');
     } catch (error) {
-      console.error('Registration error:', error); // Debug log
-      console.error('Error code:', error.code); // Debug log
-      console.error('Error message:', error.message); // Debug log
+      console.error('Registration error:', error);
       
-      // More specific error messages
       switch (error.code) {
         case 'auth/email-already-in-use':
           setError('This email is already registered');
@@ -105,7 +105,7 @@ const Register = () => {
     <Container component="main" maxWidth="xs">
       <Paper elevation={3} sx={{ p: 4, mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Typography component="h1" variant="h5" gutterBottom>
-          Create Your Account
+          Register New Employee
         </Typography>
         
         {error && (
@@ -121,8 +121,8 @@ const Register = () => {
                 required
                 fullWidth
                 label="First Name"
-                name="first_name"
-                value={formData.first_name}
+                name="firstName"
+                value={formData.firstName}
                 onChange={handleChange}
                 disabled={loading}
               />
@@ -132,8 +132,8 @@ const Register = () => {
                 required
                 fullWidth
                 label="Last Name"
-                name="last_name"
-                value={formData.last_name}
+                name="lastName"
+                value={formData.lastName}
                 onChange={handleChange}
                 disabled={loading}
               />
@@ -145,7 +145,6 @@ const Register = () => {
                 label="Email Address"
                 name="email"
                 type="email"
-                autoComplete="email"
                 value={formData.email}
                 onChange={handleChange}
                 disabled={loading}
@@ -161,7 +160,6 @@ const Register = () => {
                 value={formData.password}
                 onChange={handleChange}
                 disabled={loading}
-                helperText="Password must be at least 6 characters long"
               />
             </Grid>
             <Grid item xs={12}>
@@ -177,27 +175,43 @@ const Register = () => {
               />
             </Grid>
             <Grid item xs={12}>
+              <TextField
+                select
+                required
+                fullWidth
+                label="Role"
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                disabled={loading}
+              >
+                {roles.map((role) => (
+                  <MenuItem key={role} value={role}>
+                    {role.charAt(0).toUpperCase() + role.slice(1)}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12}>
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
                 color="primary"
-                size="large"
                 disabled={loading}
               >
-                {loading ? 'Creating Account...' : 'Sign Up'}
+                {loading ? 'Registering...' : 'Register'}
               </Button>
             </Grid>
           </Grid>
-        </form>
-
-        <Grid container justifyContent="flex-end" sx={{ mt: 2 }}>
-          <Grid item>
-            <Link href="/login" variant="body2">
-              Already have an account? Sign in
-            </Link>
+          <Grid container justifyContent="flex-end" sx={{ mt: 2 }}>
+            <Grid item>
+              <Link href="/login" variant="body2">
+                Already have an account? Sign in
+              </Link>
+            </Grid>
           </Grid>
-        </Grid>
+        </form>
       </Paper>
     </Container>
   );
